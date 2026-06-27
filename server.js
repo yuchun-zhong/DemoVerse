@@ -27,7 +27,7 @@ app.use(express.static(path.join(__dirname, 'public')));
  * POST /api/generate - 创建视频生成任务
  */
 app.post('/api/generate', async (req, res) => {
-  const { url } = req.body;
+  const { url, style, voice, platform } = req.body;
 
   if (!url) {
     return res.status(400).json({ error: '请提供项目链接 URL' });
@@ -40,10 +40,16 @@ app.post('/api/generate', async (req, res) => {
     return res.status(400).json({ error: 'URL 格式无效' });
   }
 
-  const job = jobQueue.create(url);
+  const options = {
+    style: style || 'professional',
+    voice: voice || 'yunxi_male',
+    platform: platform || 'bilibili',
+  };
+
+  const job = jobQueue.create(url, options);
   
   // 异步执行视频生成
-  processVideoGeneration(job.id, url, req).catch(err => {
+  processVideoGeneration(job.id, url, options, req).catch(err => {
     console.error(`任务 ${job.id} 执行失败:`, err);
     jobQueue.update(job.id, {
       status: 'failed',
@@ -113,7 +119,7 @@ app.get('*', (req, res) => {
 
 // ==================== 视频生成核心流程 ====================
 
-async function processVideoGeneration(jobId, url, req) {
+async function processVideoGeneration(jobId, url, options, req) {
   const customHeaders = HeaderUtils.extractForwardHeaders(
     req.headers instanceof Map 
       ? Object.fromEntries(req.headers) 
@@ -132,7 +138,7 @@ async function processVideoGeneration(jobId, url, req) {
   try {
     // Step 1: 录制页面
     updateProgress('recording', 10, '正在录制页面...');
-    const { screenshots, pageData, workDir } = await recordPage(url, jobId, (info) => {
+    const { screenshots, pageData, workDir } = await recordPage(url, jobId, options, (info) => {
       const progressMap = {
         launch: 10,
         loading: 15,
@@ -151,7 +157,7 @@ async function processVideoGeneration(jobId, url, req) {
 
     // Step 2: AI 解说
     updateProgress('narrating', 50, 'AI 生成解说...');
-    const narrator = new Narrator(customHeaders);
+    const narrator = new Narrator(customHeaders, options);
     const { script, audioPath } = await narrator.createNarration(
       pageData, screenshots, jobId, (info) => {
         const progressMap = {
@@ -170,7 +176,7 @@ async function processVideoGeneration(jobId, url, req) {
     // Step 3: 编译视频
     updateProgress('compiling', 75, '编译视频...');
     const videoPath = await compileVideo(
-      screenshots, jobId, {}, audioPath, (info) => {
+      screenshots, jobId, { platform: options.platform }, audioPath, (info) => {
         const progressMap = {
           compiling: 75,
           encoding: 80,

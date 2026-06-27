@@ -1,309 +1,332 @@
 /**
- * DemoVerse 前端应用逻辑
+ * DemoVerse - 前端交互逻辑
+ * Vercel 极简黑 + Linear 科技感风格
  */
 
-// 状态管理
-let currentJobId = null;
-let pollingTimer = null;
+(function () {
+  'use strict';
 
-// ==================== 初始化 ====================
-
-document.addEventListener('DOMContentLoaded', () => {
-  // 初始化 Lucide 图标
-  if (window.lucide) {
-    lucide.createIcons();
-  }
-  // 加载历史记录
-  loadHistory();
-
-  // 回车触发生成
-  document.getElementById('urlInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') startGeneration();
-  });
-});
-
-// ==================== 生成流程 ====================
-
-async function startGeneration() {
+  // ==================== DOM 引用 ====================
   const urlInput = document.getElementById('urlInput');
-  const url = urlInput.value.trim();
+  const generateBtn = document.getElementById('generateBtn');
+  const progressSection = document.getElementById('progressSection');
+  const resultSection = document.getElementById('resultSection');
+  const progressBar = document.getElementById('progressBar');
+  const progressPercent = document.getElementById('progressPercent');
+  const progressMessage = document.getElementById('progressMessage');
+  const videoPlayer = document.getElementById('videoPlayer');
+  const redoBtn = document.getElementById('redoBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const scriptSection = document.getElementById('scriptSection');
+  const scriptToggle = document.getElementById('scriptToggle');
+  const scriptContent = document.getElementById('scriptContent');
+  const errorToast = document.getElementById('errorToast');
+  const errorMessage = document.getElementById('errorMessage');
 
-  if (!url) {
-    shakeElement(urlInput);
-    return;
-  }
+  // ==================== 状态 ====================
+  let currentJobId = null;
+  let pollTimer = null;
 
-  // 验证 URL
-  try {
-    new URL(url);
-  } catch {
-    shakeElement(urlInput);
-    return;
-  }
+  const selectedOptions = {
+    style: 'professional',
+    voice: 'yunxi_male',
+    platform: 'bilibili',
+  };
 
-  // 切换到进度界面
-  showProgress();
-  setProgress(0, '正在提交任务...');
+  // ==================== URL 输入控制 ====================
+  urlInput.addEventListener('input', function () {
+    const hasValue = this.value.trim().length > 0;
+    generateBtn.disabled = !hasValue;
+  });
 
-  try {
-    const response = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
+  urlInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !generateBtn.disabled) {
+      startGeneration();
+    }
+  });
+
+  generateBtn.addEventListener('click', startGeneration);
+
+  // ==================== 自定义下拉选择 ====================
+  document.querySelectorAll('.custom-select').forEach(function (select) {
+    const trigger = select.querySelector('.select-trigger');
+    const items = select.querySelectorAll('.select-item');
+    const valueEl = trigger.querySelector('.select-value');
+    const optionKey = select.dataset.option;
+
+    trigger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      // 关闭其他
+      document.querySelectorAll('.custom-select.open').forEach(function (s) {
+        if (s !== select) s.classList.remove('open');
+      });
+      select.classList.toggle('open');
     });
 
-    const data = await response.json();
+    items.forEach(function (item) {
+      item.addEventListener('click', function () {
+        items.forEach(function (i) { i.classList.remove('selected'); });
+        item.classList.add('selected');
+        valueEl.textContent = item.textContent;
+        selectedOptions[optionKey] = item.dataset.value;
+        select.classList.remove('open');
+      });
+    });
+  });
 
-    if (!response.ok) {
-      throw new Error(data.error || '提交失败');
-    }
+  // 点击外部关闭下拉
+  document.addEventListener('click', function () {
+    document.querySelectorAll('.custom-select.open').forEach(function (s) {
+      s.classList.remove('open');
+    });
+  });
 
-    currentJobId = data.jobId;
-    startPolling();
-  } catch (error) {
-    showError(error.message);
-  }
-}
+  // ==================== 生成流程 ====================
+  async function startGeneration() {
+    const url = urlInput.value.trim();
+    if (!url) return;
 
-// ==================== 轮询状态 ====================
+    // 重置 UI
+    resultSection.classList.add('hidden');
+    progressSection.classList.remove('hidden');
+    resetProgress();
+    updateStepState('recording', 'active');
 
-function startPolling() {
-  if (pollingTimer) clearInterval(pollingTimer);
+    // 禁用输入
+    generateBtn.disabled = true;
+    generateBtn.querySelector('.generate-btn-text').textContent = '生成中...';
 
-  pollingTimer = setInterval(async () => {
     try {
-      const response = await fetch(`/api/status/${currentJobId}`);
-      const job = await response.json();
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: url,
+          style: selectedOptions.style,
+          voice: selectedOptions.voice,
+          platform: selectedOptions.platform,
+        }),
+      });
+
+      const data = await response.json();
 
       if (!response.ok) {
+        throw new Error(data.error || '生成失败');
+      }
+
+      currentJobId = data.jobId;
+      startPolling();
+
+    } catch (err) {
+      showError(err.message);
+      resetUI();
+    }
+  }
+
+  // ==================== 轮询状态 ====================
+  function startPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(pollStatus, 1500);
+    pollStatus(); // 立即执行一次
+  }
+
+  async function pollStatus() {
+    if (!currentJobId) return;
+
+    try {
+      const res = await fetch('/api/status/' + currentJobId);
+      const job = await res.json();
+
+      if (!res.ok) {
         throw new Error(job.error || '查询失败');
       }
 
-      updateProgressUI(job);
+      updateProgress(job);
 
       if (job.status === 'completed') {
-        stopPolling();
+        clearInterval(pollTimer);
+        pollTimer = null;
         showResult(job);
       } else if (job.status === 'failed') {
-        stopPolling();
+        clearInterval(pollTimer);
+        pollTimer = null;
         showError(job.error || '视频生成失败');
+        resetUI();
       }
-    } catch (error) {
-      stopPolling();
-      showError(error.message);
+    } catch (err) {
+      console.error('轮询错误:', err);
     }
-  }, 1500);
-}
-
-function stopPolling() {
-  if (pollingTimer) {
-    clearInterval(pollingTimer);
-    pollingTimer = null;
   }
-}
 
-// ==================== UI 更新 ====================
+  // ==================== 更新进度 ====================
+  function updateProgress(job) {
+    const pct = job.progress || 0;
+    progressBar.style.width = pct + '%';
+    progressPercent.textContent = pct + '%';
+    progressMessage.textContent = job.message || '';
 
-function updateProgressUI(job) {
-  setProgress(job.progress || 0, job.message || '处理中...');
+    // 步骤映射
+    const stepMap = {
+      launch: { step: 'recording', state: 'active' },
+      loading: { step: 'recording', state: 'active' },
+      analyzing: { step: 'recording', state: 'active' },
+      capturing: { step: 'recording', state: 'active' },
+      scrolling: { step: 'recording', state: 'active' },
+      interacting: { step: 'recording', state: 'active' },
+      captured: { step: 'recording', state: 'completed' },
+      recording: { step: 'recording', state: 'active' },
+      narrating: { step: 'script', state: 'active' },
+      generating_script: { step: 'script', state: 'active' },
+      script_generated: { step: 'script', state: 'completed' },
+      generating_audio: { step: 'voiceover', state: 'active' },
+      audio_generated: { step: 'voiceover', state: 'completed' },
+      audio_failed: { step: 'voiceover', state: 'completed' },
+      compiling: { step: 'compositing', state: 'active' },
+      encoding: { step: 'compositing', state: 'active' },
+      encoded: { step: 'compositing', state: 'completed' },
+      uploading: { step: 'compositing', state: 'active' },
+    };
 
-  // 更新步骤状态
-  const steps = document.querySelectorAll('.step');
-  const stepMap = {
-    recording: 0,
-    narrating: 1,
-    compiling: 2,
-    uploading: 3,
-  };
+    const info = stepMap[job.currentStep];
+    if (info) {
+      // 根据当前步骤更新所有步骤状态
+      const stepOrder = ['recording', 'script', 'voiceover', 'compositing'];
+      const currentIdx = stepOrder.indexOf(info.step);
 
-  const currentStepIndex = stepMap[job.currentStep] ?? -1;
+      stepOrder.forEach(function (stepName, idx) {
+        if (idx < currentIdx) {
+          updateStepState(stepName, 'completed');
+        } else if (idx === currentIdx) {
+          updateStepState(stepName, info.state);
+        } else {
+          updateStepState(stepName, '');
+        }
+      });
 
-  steps.forEach((step, index) => {
-    step.classList.remove('active', 'done');
-    if (index < currentStepIndex) {
-      step.classList.add('done');
-    } else if (index === currentStepIndex) {
-      step.classList.add('active');
+      // 更新连接线
+      updateStepLines(currentIdx, info.state === 'completed');
     }
+  }
+
+  function updateStepState(stepName, state) {
+    const stepEl = document.querySelector('.step[data-step="' + stepName + '"]');
+    if (!stepEl) return;
+
+    stepEl.classList.remove('active', 'completed');
+    if (state) {
+      stepEl.classList.add(state);
+    }
+
+    const statusEl = stepEl.querySelector('.step-status');
+    if (statusEl) {
+      if (state === 'active') statusEl.textContent = '进行中';
+      else if (state === 'completed') statusEl.textContent = '已完成';
+      else statusEl.textContent = '等待中';
+    }
+  }
+
+  function updateStepLines(currentIdx, currentCompleted) {
+    const lines = document.querySelectorAll('.step-line');
+    lines.forEach(function (line, idx) {
+      if (idx < currentIdx || (idx === currentIdx && currentCompleted)) {
+        line.classList.add('completed');
+      } else {
+        line.classList.remove('completed');
+      }
+    });
+  }
+
+  function resetProgress() {
+    progressBar.style.width = '0%';
+    progressPercent.textContent = '0%';
+    progressMessage.textContent = '准备中...';
+
+    document.querySelectorAll('.step').forEach(function (step) {
+      step.classList.remove('active', 'completed');
+      var s = step.querySelector('.step-status');
+      if (s) s.textContent = '等待中';
+    });
+    document.querySelectorAll('.step-line').forEach(function (line) {
+      line.classList.remove('completed');
+    });
+  }
+
+  // ==================== 显示结果 ====================
+  async function showResult(job) {
+    progressSection.classList.add('hidden');
+    resultSection.classList.remove('hidden');
+
+    // 设置视频源
+    if (job.videoUrl) {
+      videoPlayer.src = job.videoUrl;
+    }
+
+    // 显示脚本
+    if (job.script) {
+      scriptSection.classList.remove('hidden');
+      scriptContent.textContent = job.script;
+    }
+
+    // 重置按钮
+    generateBtn.disabled = false;
+    generateBtn.querySelector('.generate-btn-text').textContent = '开始生成';
+
+    // 下载按钮
+    downloadBtn.onclick = async function () {
+      try {
+        const res = await fetch('/api/download/' + job.id);
+        const data = await res.json();
+        if (data.downloadUrl) {
+          const response = await fetch(data.downloadUrl);
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'demoverse_' + job.id + '.mp4';
+          a.click();
+          window.URL.revokeObjectURL(url);
+        }
+      } catch (err) {
+        showError('下载失败');
+      }
+    };
+
+    // 重做按钮
+    redoBtn.onclick = function () {
+      resultSection.classList.add('hidden');
+      if (job.videoUrl) {
+        videoPlayer.src = '';
+      }
+      urlInput.focus();
+    };
+  }
+
+  // ==================== 脚本折叠 ====================
+  scriptToggle.addEventListener('click', function () {
+    scriptToggle.classList.toggle('open');
+    scriptContent.classList.toggle('open');
   });
-}
 
-function setProgress(percent, message) {
-  document.getElementById('progressBarFill').style.width = `${percent}%`;
-  document.getElementById('progressPercent').textContent = `${Math.round(percent)}%`;
-  if (message) {
-    document.getElementById('progressMessage').textContent = message;
-  }
-}
-
-function showProgress() {
-  document.getElementById('inputArea').classList.add('hidden');
-  document.getElementById('progressArea').classList.remove('hidden');
-  document.getElementById('resultArea').classList.add('hidden');
-  document.getElementById('errorArea').classList.add('hidden');
-}
-
-function showResult(job) {
-  document.getElementById('progressArea').classList.add('hidden');
-  document.getElementById('resultArea').classList.remove('hidden');
-
-  document.getElementById('resultUrl').textContent = job.url;
-
-  // 设置视频源
-  if (job.videoUrl) {
-    const video = document.getElementById('resultVideo');
-    video.src = job.videoUrl;
+  // ==================== 错误提示 ====================
+  function showError(msg) {
+    errorMessage.textContent = msg;
+    errorToast.classList.remove('hidden');
+    requestAnimationFrame(function () {
+      errorToast.classList.add('visible');
+    });
+    setTimeout(function () {
+      errorToast.classList.remove('visible');
+      setTimeout(function () {
+        errorToast.classList.add('hidden');
+      }, 200);
+    }, 4000);
   }
 
-  // 显示解说脚本
-  if (job.script) {
-    const scriptArea = document.getElementById('resultScriptArea');
-    scriptArea.classList.remove('hidden');
-    document.getElementById('scriptContent').textContent = job.script;
+  // ==================== 重置 UI ====================
+  function resetUI() {
+    progressSection.classList.add('hidden');
+    generateBtn.disabled = false;
+    generateBtn.querySelector('.generate-btn-text').textContent = '开始生成';
   }
 
-  // 重新创建图标
-  if (window.lucide) lucide.createIcons();
-
-  loadHistory();
-}
-
-function showError(message) {
-  document.getElementById('progressArea').classList.add('hidden');
-  document.getElementById('errorArea').classList.remove('hidden');
-  document.getElementById('errorMessage').textContent = message || '未知错误';
-
-  if (window.lucide) lucide.createIcons();
-  loadHistory();
-}
-
-function resetGeneration() {
-  stopPolling();
-  currentJobId = null;
-
-  document.getElementById('inputArea').classList.remove('hidden');
-  document.getElementById('progressArea').classList.add('hidden');
-  document.getElementById('resultArea').classList.add('hidden');
-  document.getElementById('errorArea').classList.add('hidden');
-
-  // 重置进度
-  setProgress(0, '正在处理...');
-  document.querySelectorAll('.step').forEach(s => s.classList.remove('active', 'done'));
-
-  // 清空视频
-  const video = document.getElementById('resultVideo');
-  video.src = '';
-}
-
-// ==================== 下载 ====================
-
-async function downloadVideo() {
-  if (!currentJobId) return;
-
-  try {
-    const response = await fetch(`/api/download/${currentJobId}`);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || '获取下载链接失败');
-    }
-
-    // 使用 fetch + blob 模式下载
-    const fileResponse = await fetch(data.downloadUrl);
-    const blob = await fileResponse.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = `demoverse_${currentJobId}.mp4`;
-    link.click();
-    URL.revokeObjectURL(blobUrl);
-  } catch (error) {
-    alert('下载失败: ' + error.message);
-  }
-}
-
-// ==================== 解说脚本展开/收起 ====================
-
-function toggleScript() {
-  const content = document.getElementById('scriptContent');
-  content.classList.toggle('collapsed');
-  const chevron = document.getElementById('scriptChevron');
-  if (content.classList.contains('collapsed')) {
-    chevron.style.transform = 'rotate(0deg)';
-  } else {
-    chevron.style.transform = 'rotate(180deg)';
-  }
-}
-
-// ==================== 历史记录 ====================
-
-async function loadHistory() {
-  try {
-    const response = await fetch('/api/jobs');
-    const jobs = await response.json();
-
-    const container = document.getElementById('historyList');
-
-    if (jobs.length === 0) {
-      container.innerHTML = '<div class="history-empty">暂无生成记录</div>';
-      return;
-    }
-
-    container.innerHTML = jobs.slice(0, 10).map(job => `
-      <div class="history-item">
-        <div class="history-item-info">
-          <div class="history-item-status ${job.status}"></div>
-          <span class="history-item-url">${escapeHtml(job.url)}</span>
-        </div>
-        <div class="history-item-actions">
-          ${job.status === 'completed' ? `
-            <button class="btn btn-ghost" onclick="viewJobResult('${job.id}')">查看</button>
-          ` : ''}
-          <button class="btn btn-ghost" onclick="deleteJob('${job.id}')">删除</button>
-        </div>
-      </div>
-    `).join('');
-  } catch (e) {
-    // 忽略
-  }
-}
-
-async function viewJobResult(jobId) {
-  const response = await fetch(`/api/status/${jobId}`);
-  const job = await response.json();
-  if (job.status === 'completed') {
-    currentJobId = job.id;
-    showResult(job);
-  }
-}
-
-async function deleteJob(jobId) {
-  await fetch(`/api/jobs/${jobId}`, { method: 'DELETE' });
-  loadHistory();
-}
-
-// ==================== 工具函数 ====================
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-function shakeElement(el) {
-  el.style.animation = 'none';
-  el.offsetHeight; // 触发重绘
-  el.style.animation = 'shake 0.4s ease';
-  setTimeout(() => { el.style.animation = ''; }, 400);
-}
-
-// 添加 shake 动画
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-6px); }
-    75% { transform: translateX(6px); }
-  }
-`;
-document.head.appendChild(style);
+})();

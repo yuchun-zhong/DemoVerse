@@ -6,277 +6,271 @@
   <title>DemoVerse - AI Demo视频生成器</title>
   <link rel="preconnect" href="https://fonts.googleapis.cn">
   <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
-  <link href="https://fonts.googleapis.cn/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.cn/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <div id="app">
-    <!-- 背景层 -->
-    <div class="bg-layer">
-      <div class="bg-grid"></div>
-      <div class="bg-glow bg-glow-1"></div>
-      <div class="bg-glow bg-glow-2"></div>
-    </div>
+  <!-- 顶部微弱紫色光晕 -->
+  <div class="top-glow"></div>
 
-    <!-- 导航栏 -->
-    <nav class="navbar">
-      <div class="nav-inner">
-        <div class="logo">
-          <div class="logo-icon">
-            <i data-lucide="clapperboard" style="width:22px;height:22px;color:#00FFB2"></i>
-          </div>
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <div class="nav-left">
+        <a href="/" class="logo">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="23 7 16 12 23 17 23 7"></polygon>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+          </svg>
           <span class="logo-text">DemoVerse</span>
-        </div>
-        <div class="nav-links">
-          <a href="#features" class="nav-link">功能</a>
-          <a href="#generate" class="nav-link">生成</a>
-          <a href="https://github.com" target="_blank" class="nav-link-icon" title="GitHub">
-            <i data-lucide="github" style="width:18px;height:18px"></i>
-          </a>
-        </div>
+        </a>
       </div>
-    </nav>
+      <div class="nav-center">
+        <a href="#features" class="nav-link">功能</a>
+        <a href="#pricing" class="nav-link">定价</a>
+        <a href="#docs" class="nav-link">文档</a>
+      </div>
+      <div class="nav-right">
+        <a href="#login" class="nav-link">登录</a>
+      </div>
+    </div>
+  </nav>
 
+  <!-- 主内容区 -->
+  <main class="main">
     <!-- Hero 区域 -->
-    <header class="hero" id="hero">
-      <div class="hero-content">
-        <div class="hero-badge">
-          <i data-lucide="sparkles" style="width:14px;height:14px;color:#00FFB2"></i>
-          <span>AI 驱动</span>
-        </div>
-        <h1 class="hero-title">
-          <span class="title-line">输入链接</span>
-          <span class="title-line title-accent">自动生成 Demo 视频</span>
-        </h1>
-        <p class="hero-desc">
-          DemoVerse 使用 Puppeteer 录制页面、AI 生成解说、FFmpeg 合成视频，<br>
-          一键将你的项目转化为专业的产品演示视频。
-        </p>
-        <div class="hero-actions">
-          <a href="#generate" class="btn btn-primary">
-            <i data-lucide="play" style="width:16px;height:16px"></i>
-            开始生成
-          </a>
-          <a href="#features" class="btn btn-ghost">
-            了解更多
-            <i data-lucide="arrow-down" style="width:16px;height:16px"></i>
-          </a>
+    <section class="hero">
+      <h1 class="hero-title">
+        输入链接，<br>
+        <span class="gradient-text">AI 自动生成 Demo 视频</span>
+      </h1>
+      <p class="hero-desc">Puppeteer 录屏 · LLM 解说 · TTS 配音 · 一键输出 MP4</p>
+
+      <!-- URL 输入框 -->
+      <div class="url-input-wrapper">
+        <div class="url-input-inner">
+          <svg class="url-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+          <input
+            type="url"
+            id="urlInput"
+            class="url-input"
+            placeholder="粘贴你的项目链接..."
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <button id="generateBtn" class="generate-btn" disabled>
+            <span class="generate-btn-text">开始生成</span>
+            <svg class="generate-btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
         </div>
       </div>
-    </header>
 
-    <!-- 功能特性 -->
-    <section class="features" id="features">
-      <div class="section-inner">
-        <h2 class="section-title">核心能力</h2>
-        <div class="feature-grid">
-          <div class="feature-card">
-            <div class="feature-icon" style="--accent: #00FFB2">
-              <i data-lucide="monitor-play" style="width:24px;height:24px"></i>
+      <!-- 选项行 -->
+      <div class="options-row">
+        <!-- 风格选择 -->
+        <div class="option-group">
+          <label class="option-label">风格</label>
+          <div class="custom-select" data-option="style">
+            <button class="select-trigger" type="button">
+              <span class="select-value">专业简洁</span>
+              <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="select-dropdown">
+              <div class="select-item selected" data-value="professional">专业简洁</div>
+              <div class="select-item" data-value="casual">轻松亲切</div>
+              <div class="select-item" data-value="energetic">活力激情</div>
             </div>
-            <h3>智能录制</h3>
-            <p>Puppeteer 自动打开页面、滚动截图、模拟交互，完整捕获产品界面</p>
           </div>
-          <div class="feature-card">
-            <div class="feature-icon" style="--accent: #6366F1">
-              <i data-lucide="brain" style="width:24px;height:24px"></i>
+        </div>
+
+        <!-- 配音选择 -->
+        <div class="option-group">
+          <label class="option-label">配音</label>
+          <div class="custom-select" data-option="voice">
+            <button class="select-trigger" type="button">
+              <span class="select-value">云希男声</span>
+              <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="select-dropdown">
+              <div class="select-item selected" data-value="yunxi_male">云希男声</div>
+              <div class="select-item" data-value="xiaoxiao_female">晓晓女声</div>
             </div>
-            <h3>AI 解说</h3>
-            <p>大语言模型分析页面内容，自动生成专业解说脚本并合成语音</p>
           </div>
-          <div class="feature-card">
-            <div class="feature-icon" style="--accent: #F59E0B">
-              <i data-lucide="film" style="width:24px;height:24px"></i>
+        </div>
+
+        <!-- 发布平台选择 -->
+        <div class="option-group">
+          <label class="option-label">发布平台</label>
+          <div class="custom-select" data-option="platform">
+            <button class="select-trigger" type="button">
+              <span class="select-value">哔哩哔哩 16:9</span>
+              <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="select-dropdown">
+              <div class="select-item selected" data-value="bilibili">哔哩哔哩 16:9</div>
+              <div class="select-item" data-value="douyin">抖音 9:16</div>
+              <div class="select-item" data-value="xiaohongshu">小红书 3:4</div>
+              <div class="select-item" data-value="youtube">YouTube 16:9</div>
+              <div class="select-item" data-value="wechat">视频号 9:16</div>
+              <div class="select-item" data-value="zhihu">知乎 16:9</div>
+              <div class="select-item" data-value="custom">自定义</div>
             </div>
-            <h3>视频合成</h3>
-            <p>FFmpeg 将截图序列与解说音频合成为流畅的 MP4 视频</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon" style="--accent: #22C55E">
-              <i data-lucide="cloud-upload" style="width:24px;height:24px"></i>
-            </div>
-            <h3>云端存储</h3>
-            <p>视频自动上传至对象存储，随时预览下载，支持分享</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 生成区域 -->
-    <section class="generate-section" id="generate">
-      <div class="section-inner">
-        <h2 class="section-title">生成 Demo 视频</h2>
-        <p class="section-desc">输入你的项目链接，AI 将自动录制页面并生成带有解说的演示视频</p>
-
-        <!-- 输入区 -->
-        <div class="input-area" id="inputArea">
-          <div class="url-input-wrapper">
-            <div class="url-input-icon">
-              <i data-lucide="globe" style="width:20px;height:20px"></i>
+    <!-- 进度卡片 -->
+    <section id="progressSection" class="progress-section hidden">
+      <div class="progress-card">
+        <div class="progress-header">
+          <span class="progress-title">生成中</span>
+          <span id="progressPercent" class="progress-percent">0%</span>
+        </div>
+        <!-- 步骤指示器 -->
+        <div class="steps">
+          <div class="step" data-step="recording">
+            <div class="step-dot"></div>
+            <div class="step-info">
+              <span class="step-name">自动录屏</span>
+              <span class="step-status">等待中</span>
             </div>
-            <input
-              type="url"
-              id="urlInput"
-              class="url-input"
-              placeholder="https://your-project.vercel.app"
-              autocomplete="off"
-            >
-            <button class="btn btn-primary btn-generate" id="generateBtn" onclick="startGeneration()">
-              <i data-lucide="zap" style="width:16px;height:16px"></i>
-              生成视频
+          </div>
+          <div class="step-line"></div>
+          <div class="step" data-step="script">
+            <div class="step-dot"></div>
+            <div class="step-info">
+              <span class="step-name">AI 脚本</span>
+              <span class="step-status">等待中</span>
+            </div>
+          </div>
+          <div class="step-line"></div>
+          <div class="step" data-step="voiceover">
+            <div class="step-dot"></div>
+            <div class="step-info">
+              <span class="step-name">AI 配音</span>
+              <span class="step-status">等待中</span>
+            </div>
+          </div>
+          <div class="step-line"></div>
+          <div class="step" data-step="compositing">
+            <div class="step-dot"></div>
+            <div class="step-info">
+              <span class="step-name">合成视频</span>
+              <span class="step-status">等待中</span>
+            </div>
+          </div>
+        </div>
+        <!-- 渐变进度条 -->
+        <div class="progress-bar-wrapper">
+          <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+        </div>
+        <p id="progressMessage" class="progress-message">准备中...</p>
+      </div>
+    </section>
+
+    <!-- 结果卡片 -->
+    <section id="resultSection" class="result-section hidden">
+      <div class="result-card">
+        <div class="result-header">
+          <span class="result-title">视频已生成</span>
+          <div class="result-actions">
+            <button id="redoBtn" class="action-btn action-btn-secondary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="action-icon">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+              </svg>
+              重做
             </button>
-          </div>
-          <div class="input-hint">
-            <i data-lucide="info" style="width:14px;height:14px"></i>
-            支持任意可访问的网页链接，建议使用已部署的项目地址
-          </div>
-        </div>
-
-        <!-- 进度区 -->
-        <div class="progress-area hidden" id="progressArea">
-          <div class="progress-card">
-            <div class="progress-header">
-              <div class="progress-title">
-                <div class="spinner"></div>
-                <span id="progressMessage">正在处理...</span>
-              </div>
-              <span class="progress-percent" id="progressPercent">0%</span>
-            </div>
-            <div class="progress-bar-track">
-              <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
-            </div>
-            <div class="progress-steps" id="progressSteps">
-              <div class="step" data-step="recording">
-                <div class="step-dot"></div>
-                <span>页面录制</span>
-              </div>
-              <div class="step" data-step="narrating">
-                <div class="step-dot"></div>
-                <span>AI 解说</span>
-              </div>
-              <div class="step" data-step="compiling">
-                <div class="step-dot"></div>
-                <span>视频合成</span>
-              </div>
-              <div class="step" data-step="uploading">
-                <div class="step-dot"></div>
-                <span>云端存储</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 结果区 -->
-        <div class="result-area hidden" id="resultArea">
-          <div class="result-card">
-            <div class="result-header">
-              <div class="result-success-icon">
-                <i data-lucide="check-circle-2" style="width:28px;height:28px;color:#22C55E"></i>
-              </div>
-              <div>
-                <h3 class="result-title">视频生成完成</h3>
-                <p class="result-url" id="resultUrl"></p>
-              </div>
-            </div>
-            <div class="result-video-wrapper">
-              <video id="resultVideo" controls class="result-video"></video>
-            </div>
-            <div class="result-script hidden" id="resultScriptArea">
-              <div class="script-header" onclick="toggleScript()">
-                <span>
-                  <i data-lucide="file-text" style="width:16px;height:16px"></i>
-                  AI 解说脚本
-                </span>
-                <i data-lucide="chevron-down" style="width:16px;height:16px" id="scriptChevron"></i>
-              </div>
-              <div class="script-content" id="scriptContent"></div>
-            </div>
-            <div class="result-actions">
-              <button class="btn btn-primary" id="downloadBtn" onclick="downloadVideo()">
-                <i data-lucide="download" style="width:16px;height:16px"></i>
-                下载视频
-              </button>
-              <button class="btn btn-ghost" onclick="resetGeneration()">
-                <i data-lucide="refresh-cw" style="width:16px;height:16px"></i>
-                重新生成
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 错误区 -->
-        <div class="error-area hidden" id="errorArea">
-          <div class="error-card">
-            <div class="error-icon">
-              <i data-lucide="alert-triangle" style="width:28px;height:28px;color:#EF4444"></i>
-            </div>
-            <h3>生成失败</h3>
-            <p id="errorMessage">未知错误</p>
-            <button class="btn btn-ghost" onclick="resetGeneration()">
-              <i data-lucide="refresh-cw" style="width:16px;height:16px"></i>
-              重试
+            <button id="downloadBtn" class="action-btn action-btn-primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="action-icon">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              下载
             </button>
           </div>
         </div>
-
-        <!-- 历史任务 -->
-        <div class="history-area" id="historyArea">
-          <h3 class="history-title">历史记录</h3>
-          <div class="history-list" id="historyList">
-            <div class="history-empty">暂无生成记录</div>
-          </div>
+        <div class="video-wrapper">
+          <video id="videoPlayer" controls playsinline></video>
+        </div>
+        <!-- AI 解说脚本 -->
+        <div id="scriptSection" class="script-section hidden">
+          <button id="scriptToggle" class="script-toggle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="script-icon">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            AI 解说脚本
+            <svg class="script-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div id="scriptContent" class="script-content"></div>
         </div>
       </div>
     </section>
 
-    <!-- 技术栈 -->
-    <section class="tech-section">
-      <div class="section-inner">
-        <h2 class="section-title">技术架构</h2>
-        <div class="tech-flow">
-          <div class="tech-node">
-            <div class="tech-icon"><i data-lucide="globe" style="width:24px;height:24px"></i></div>
-            <span class="tech-name">URL 输入</span>
-          </div>
-          <div class="tech-arrow"><i data-lucide="arrow-right" style="width:20px;height:20px"></i></div>
-          <div class="tech-node">
-            <div class="tech-icon" style="--accent:#F59E0B"><i data-lucide="monitor" style="width:24px;height:24px"></i></div>
-            <span class="tech-name">Puppeteer</span>
-            <span class="tech-desc">页面录制</span>
-          </div>
-          <div class="tech-arrow"><i data-lucide="arrow-right" style="width:20px;height:20px"></i></div>
-          <div class="tech-node">
-            <div class="tech-icon" style="--accent:#6366F1"><i data-lucide="brain" style="width:24px;height:24px"></i></div>
-            <span class="tech-name">LLM + TTS</span>
-            <span class="tech-desc">AI 解说</span>
-          </div>
-          <div class="tech-arrow"><i data-lucide="arrow-right" style="width:20px;height:20px"></i></div>
-          <div class="tech-node">
-            <div class="tech-icon" style="--accent:#EF4444"><i data-lucide="film" style="width:24px;height:24px"></i></div>
-            <span class="tech-name">FFmpeg</span>
-            <span class="tech-desc">视频合成</span>
-          </div>
-          <div class="tech-arrow"><i data-lucide="arrow-right" style="width:20px;height:20px"></i></div>
-          <div class="tech-node">
-            <div class="tech-icon" style="--accent:#22C55E"><i data-lucide="download" style="width:24px;height:24px"></i></div>
-            <span class="tech-name">MP4 输出</span>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- 错误提示 -->
+    <div id="errorToast" class="toast toast-error hidden">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toast-icon">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="15" y1="9" x2="9" y2="15"></line>
+        <line x1="9" y1="9" x2="15" y2="15"></line>
+      </svg>
+      <span id="errorMessage"></span>
+    </div>
+  </main>
 
-    <!-- 页脚 -->
-    <footer class="footer">
-      <div class="footer-inner">
-        <div class="footer-brand">
-          <i data-lucide="clapperboard" style="width:18px;height:18px;color:#00FFB2"></i>
-          <span>DemoVerse</span>
-        </div>
-        <p class="footer-text">Node.js + Express + Puppeteer + FFmpeg | AI 驱动的 Demo 视频生成器</p>
+  <!-- 信任 logo 区 -->
+  <section class="trust-section">
+    <p class="trust-label">已被开发者信赖</p>
+    <div class="trust-logos">
+      <div class="trust-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        <span>Vercel</span>
       </div>
-    </footer>
-  </div>
+      <div class="trust-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+        <span>Linear</span>
+      </div>
+      <div class="trust-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.43 5.43 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        <span>GitHub</span>
+      </div>
+      <div class="trust-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <span>Notion</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <span class="footer-brand">&copy; 2025 DemoVerse</span>
+      <div class="footer-links">
+        <a href="#">隐私政策</a>
+        <a href="#">服务条款</a>
+        <a href="#">GitHub</a>
+      </div>
+    </div>
+  </footer>
 
   <script src="/js/app.js"></script>
 </body>
