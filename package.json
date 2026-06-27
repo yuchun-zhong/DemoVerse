@@ -1,0 +1,21 @@
+{
+  "name": "demoverse",
+  "version": "1.0.0",
+  "description": "DemoVerse - AI Demo视频生成器，输入项目链接自动生成Demo视频",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "axios": "^1.18.1",
+    "cors": "^2.8.5",
+    "coze-coding-dev-sdk": "^0.7.24",
+    "express": "^4.21.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "multer": "^1.4.5-lts.1",
+    "puppeteer-core": "^23.0.0",
+    "uuid": "^10.0.0"
+  }
+}

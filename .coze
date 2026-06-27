@@ -1,22 +1,10 @@
 [project]
-entrypoint = "index.html"
-requires = [ "python-3.12" ]
-template = "native-static"
-version = "0.0.28"
-appliedPatches = [ ]
+requires = ["nodejs-24"]
 
 [dev]
-build = [ ]
-run = [
-  "sh",
-  "-c",
-  "python -m http.server ${DEPLOY_RUN_PORT} --bind 0.0.0.0"
-]
+build = ["pnpm", "install"]
+run = ["sh", "-c", "node server.js"]
 
 [deploy]
-build = [ ]
-run = [
-  "sh",
-  "-c",
-  "python -m http.server ${DEPLOY_RUN_PORT} --bind 0.0.0.0"
-]
+build = ["sh", "-c", "pnpm install"]
+run = ["sh", "-c", "node server.js"]

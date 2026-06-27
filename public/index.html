@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DemoVerse - AI Demo视频生成器</title>
+  <link rel="preconnect" href="https://fonts.googleapis.cn">
+  <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
+  <link href="https://fonts.googleapis.cn/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- 背景层 -->
+    <div class="bg-layer">
+      <div class="bg-grid"></div>
+      <div class="bg-glow bg-glow-1"></div>
+      <div class="bg-glow bg-glow-2"></div>
+    </div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar">
+      <div class="nav-inner">
+        <div class="logo">
+          <div class="logo-icon">
+            <i data-lucide="clapperboard" style="width:22px;height:22px;color:#00FFB2"></i>
+          </div>
+          <span class="logo-text">DemoVerse</span>
+        </div>
+        <div class="nav-links">
+          <a href="#features" class="nav-link">功能</a>
+          <a href="#generate" class="nav-link">生成</a>
+          <a href="https://github.com" target="_blank" class="nav-link-icon" title="GitHub">
+            <i data-lucide="github" style="width:18px;height:18px"></i>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero 区域 -->
+    <header class="hero" id="hero">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <i data-lucide="sparkles" style="width:14px;height:14px;color:#00FFB2"></i>
+          <span>AI 驱动</span>
+        </div>
+        <h1 class="hero-title">
+          <span class="title-line">输入链接</span>
+          <span class="title-line title-accent">自动生成 Demo 视频</span>
+        </h1>
+        <p class="hero-desc">
+          DemoVerse 使用 Puppeteer 录制页面、AI 生成解说、FFmpeg 合成视频，<br>
+          一键将你的项目转化为专业的产品演示视频。
+        </p>
+        <div class="hero-actions">
+          <a href="#generate" class="btn btn-primary">
+            <i data-lucide="play" style="width:16px;height:16px"></i>
+            开始生成
+          </a>
+          <a href="#features" class="btn btn-ghost">
+            了解更多
+            <i data-lucide="arrow-down" style="width:16px;height:16px"></i>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- 功能特性 -->
+    <section class="features" id="features">
+      <div class="section-inner">
+        <h2 class="section-title">核心能力</h2>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon" style="--accent: #00FFB2">
+              <i data-lucide="monitor-play" style="width:24px;height:24px"></i>
+            </div>
+            <h3>智能录制</h3>
+            <p>Puppeteer 自动打开页面、滚动截图、模拟交互，完整捕获产品界面</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="--accent: #6366F1">
+              <i data-lucide="brain" style="width:24px;height:24px"></i>
+            </div>
+            <h3>AI 解说</h3>
+            <p>大语言模型分析页面内容，自动生成专业解说脚本并合成语音</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="--accent: #F59E0B">
+              <i data-lucide="film" style="width:24px;height:24px"></i>
+            </div>
+            <h3>视频合成</h3>
+            <p>FFmpeg 将截图序列与解说音频合成为流畅的 MP4 视频</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="--accent: #22C55E">
+              <i data-lucide="cloud-upload" style="width:24px;height:24px"></i>
+            </div>
+            <h3>云端存储</h3>
+            <p>视频自动上传至对象存储，随时预览下载，支持分享</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 生成区域 -->
+    <section class="generate-section" id="generate">
+      <div class="section-inner">
+        <h2 class="section-title">生成 Demo 视频</h2>
+        <p class="section-desc">输入你的项目链接，AI 将自动录制页面并生成带有解说的演示视频</p>
+
+        <!-- 输入区 -->
+        <div class="input-area" id="inputArea">
+          <div class="url-input-wrapper">
+            <div class="url-input-icon">
+              <i data-lucide="globe" style="width:20px;height:20px"></i>
+            </div>
+            <input
+              type="url"
+              id="urlInput"
+              class="url-input"
+              placeholder="https://your-project.vercel.app"
+              autocomplete="off"
+            >
+            <button class="btn btn-primary btn-generate" id="generateBtn" onclick="startGeneration()">
+              <i data-lucide="zap" style="width:16px;height:16px"></i>
+              生成视频
+            </button>
+          </div>
+          <div class="input-hint">
+            <i data-lucide="info" style="width:14px;height:14px"></i>
+            支持任意可访问的网页链接，建议使用已部署的项目地址
+          </div>
+        </div>
+
+        <!-- 进度区 -->
+        <div class="progress-area hidden" id="progressArea">
+          <div class="progress-card">
+            <div class="progress-header">
+              <div class="progress-title">
+                <div class="spinner"></div>
+                <span id="progressMessage">正在处理...</span>
+              </div>
+              <span class="progress-percent" id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+            </div>
+            <div class="progress-steps" id="progressSteps">
+              <div class="step" data-step="recording">
+                <div class="step-dot"></div>
+                <span>页面录制</span>
+              </div>
+              <div class="step" data-step="narrating">
+                <div class="step-dot"></div>
+                <span>AI 解说</span>
+              </div>
+              <div class="step" data-step="compiling">
+                <div class="step-dot"></div>
+                <span>视频合成</span>
+              </div>
+              <div class="step" data-step="uploading">
+                <div class="step-dot"></div>
+                <span>云端存储</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 结果区 -->
+        <div class="result-area hidden" id="resultArea">
+          <div class="result-card">
+            <div class="result-header">
+              <div class="result-success-icon">
+                <i data-lucide="check-circle-2" style="width:28px;height:28px;color:#22C55E"></i>
+              </div>
+              <div>
+                <h3 class="result-title">视频生成完成</h3>
+                <p class="result-url" id="resultUrl"></p>
+              </div>
+            </div>
+            <div class="result-video-wrapper">
+              <video id="resultVideo" controls class="result-video"></video>
+            </div>
+            <div class="result-script hidden" id="resultScriptArea">
+              <div class="script-header" onclick="toggleScript()">
+                <span>
+                  <i data-lucide="file-text" style="width:16px;height:16px"></i>
+                  AI 解说脚本
+                </span>
+                <i data-lucide="chevron-down" style="width:16px;height:16px" id="scriptChevron"></i>
+              </div>
+              <div class="script-content" id="scriptContent"></div>
+            </div>
+            <div class="result-actions">
+              <button class="btn btn-primary" id="downloadBtn" onclick="downloadVideo()">
+                <i data-lucide="download" style="width:16px;height:16px"></i>
+                下载视频
+              </button>
+              <button class="btn btn-ghost" onclick="resetGeneration()">
+                <i data-lucide="refresh-cw" style="width:16px;height:16px"></i>
+                重新生成
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 错误区 -->
+        <div class="error-area hidden" id="errorArea">
+          <div class="error-card">
+            <div class="error-icon">
+              <i data-lucide="alert-triangle" style="width:28px;height:28px;color:#EF4444"></i>
+            </div>
+            <h3>生成失败</h3>
+            <p id="errorMessage">未知错误</p>
+            <button class="btn btn-ghost" onclick="resetGeneration()">
+              <i data-lucide="refresh-cw" style="width:16px;height:16px"></i>
+              重试
+            </button>
+          </div>
+        </div>
+
+        <!-- 历史任务 -->
+        <div class="history-area" id="historyArea">
+          <h3 class="history-title">历史记录</h3>
+          <div class="history-list" id="historyList">
+            <div class="history-empty">暂无生成记录</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 技术栈 -->
+    <section class="tech-section">
+      <div class="section-inner">
+        <h2 class="section-title">技术架构</h2>
+        <div class="tech-flow">
+          <div class="tech-node">
+            <div class="tech-icon"><i data-lucide="globe" style="width:24px;height:24px"></i></div>
+            <span class="tech-name">URL 输入</span>
+          </div>
+          <div class="tech-arrow"><i data-lucide="arrow-right" style="width:20px;height:20px"></i></div>
+          <div class="tech-node">
+            <div class="tech-icon" style="--accent:#F59E0B"><i data-lucide="monitor" style="width:24px;height:24px"></i></div>
+            <span class="tech-name">Puppeteer</span>
+            <span class="tech-desc">页面录制</span>
+          </div>
+          <div class="tech-arrow"><i data-lucide="arrow-right" style="width:20px;height:20px"></i></div>
+          <div class="tech-node">
+            <div class="tech-icon" style="--accent:#6366F1"><i data-lucide="brain" style="width:24px;height:24px"></i></div>
+            <span class="tech-name">LLM + TTS</span>
+            <span class="tech-desc">AI 解说</span>
+          </div>
+          <div class="tech-arrow"><i data-lucide="arrow-right" style="width:20px;height:20px"></i></div>
+          <div class="tech-node">
+            <div class="tech-icon" style="--accent:#EF4444"><i data-lucide="film" style="width:24px;height:24px"></i></div>
+            <span class="tech-name">FFmpeg</span>
+            <span class="tech-desc">视频合成</span>
+          </div>
+          <div class="tech-arrow"><i data-lucide="arrow-right" style="width:20px;height:20px"></i></div>
+          <div class="tech-node">
+            <div class="tech-icon" style="--accent:#22C55E"><i data-lucide="download" style="width:24px;height:24px"></i></div>
+            <span class="tech-name">MP4 输出</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <i data-lucide="clapperboard" style="width:18px;height:18px;color:#00FFB2"></i>
+          <span>DemoVerse</span>
+        </div>
+        <p class="footer-text">Node.js + Express + Puppeteer + FFmpeg | AI 驱动的 Demo 视频生成器</p>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
