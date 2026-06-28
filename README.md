@@ -1,136 +1,139 @@
-<div align="center">
+<p align="center">
+  <img src="assets/preview.png" alt="DemoVerse Preview" width="100%">
+</p>
 
-# DemoVerse
+<h1 align="center">DemoVerse</h1>
 
-**AI 驱动的智能 Demo 视频生成器**
+<p align="center">
+  <strong>AI Demo 视频生成器 — 输入链接，自动生成产品演示视频</strong>
+</p>
 
-输入项目链接，自动生成带 AI 解说和字幕的产品演示视频
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white" alt="Node.js">
+  <img src="https://img.shields.io/badge/Express-4.x-000000?logo=express&logoColor=white" alt="Express">
+  <img src="https://img.shields.io/badge/Puppeteer-Core-FF6B00?logo=puppeteer&logoColor=white" alt="Puppeteer">
+  <img src="https://img.shields.io/badge/FFmpeg-6.1+-007808?logo=ffmpeg&logoColor=white" alt="FFmpeg">
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License">
+</p>
 
-[功能特性](#-功能特性) · [快速开始](#-快速开始) · [技术架构](#-技术架构) · [部署](#-部署) · [FAQ](#-faq)
+<p align="center">
+  智能浏览 Agent · AI 同步解说 · TTS 配音 · 字幕视频一键输出
+</p>
 
-</div>
-
----
+<br/>
 
 ## ✨ 功能特性
 
-- 🤖 **智能浏览 Agent** — 自动分析页面结构，规划演示路径，模拟真实用户操作（点击、滚动、悬停、填表）
-- 🎙️ **AI 解说配音** — LLM 分析页面内容生成专业解说词，TTS 合成自然语音，音画完全同步
-- 🎬 **产品级视频结构** — 开场标题页 → 功能演示 → 亮点总结 → 结尾页，60-90秒标准时长
-- 📱 **多平台适配** — 哔哩哔哩 16:9 / 抖音 9:16 / 小红书 3:4 / YouTube / 视频号 / 知乎
-- 🎨 **三种风格** — 专业简洁 / 轻松亲切 / 活力激情
-- 👥 **双声道配音** — 云希男声 / 晓晓女声
-- 🔤 **自动字幕** — SRT/ASS 双格式，支持字幕烧录
-- ☁️ **云端存储** — 视频自动上传 S3 对象存储，签名 URL 预览下载
-- ⚡ **实时进度** — 4步进度追踪（智能浏览 / AI 解说 / AI 配音 / 合成视频）
+- 🤖 **智能浏览 Agent** — 自动分析页面结构，规划完整演示路径（导航→功能区→交互→亮点）
+- 🎙️ **AI 同步解说** — 产品级解说脚本：开头定位痛点 → 功能详解 → 价值总结
+- 🔊 **TTS 语音配音** — 云希男声 / 晓晓女声，分步合成确保音画同步
+- 🎬 **专业视频输出** — 标题页 + 完整演示 + 结尾页，自动烧录字幕
+- 📐 **多平台适配** — 哔哩哔哩 16:9 / 抖音 9:16 / 小红书 3:4 / YouTube / 视频号 / 知乎
+- 🎨 **多风格解说** — 专业简洁 / 轻松亲切 / 活力激情
+- ☁️ **云端存储** — 视频自动上传 S3，签名 URL 即时下载
+
+<br/>
 
 ## 🚀 快速开始
 
-### 环境要求
-
-- Node.js 18+
-- FFmpeg 6.0+（需支持 libass 字幕烧录）
-- Chromium / Chrome 浏览器
-
-### 3步启动
+### 1. 克隆项目
 
 ```bash
-# 1. 克隆项目
-git clone https://github.com/zhongyuchun/demoverse.git
+git clone https://github.com/<your-username>/demoverse.git
 cd demoverse
+```
 
-# 2. 安装依赖
+### 2. 安装依赖
+
+```bash
+# 需要 Node.js 18+, pnpm, FFmpeg, Chromium
 pnpm install
+```
 
-# 3. 启动服务
+### 3. 启动服务
+
+```bash
+# 设置环境变量
+export COZE_API_KEY=your_api_key
+export COZE_BUCKET_ENDPOINT_URL=your_s3_endpoint
+export COZE_BUCKET_NAME=your_bucket_name
+
+# 启动
 node server.js
 ```
 
-服务默认运行在 `http://localhost:5000`
+访问 `http://localhost:5000` 即可使用。
 
-### 环境变量
+<br/>
 
-| 变量名 | 说明 | 必需 |
-|--------|------|------|
-| `DEPLOY_RUN_PORT` | 服务监听端口 | 否（默认 5000） |
-| `COZE_API_KEY` | AI 服务 API Key | 是 |
-| `COZE_BUCKET_ENDPOINT_URL` | 对象存储 Endpoint | 是 |
-| `COZE_BUCKET_NAME` | 对象存储桶名 | 是 |
-
-## 🏗️ 技术架构
+## 🏗️ 项目结构
 
 ```
-┌──────────────────────────────────────────────────────┐
-│                    DemoVerse 架构                     │
-├──────────────────────────────────────────────────────┤
-│                                                      │
-│  用户输入 URL ──→ Express API ──→ 任务队列            │
-│                                    │                 │
-│                    ┌───────────────┼───────────────┐ │
-│                    ▼               ▼               ▼ │
-│              ┌─────────┐   ┌─────────┐   ┌───────┐ │
-│              │  Agent   │   │Recorder │   │Narrator│ │
-│              │ 页面分析  │   │ 全程录屏 │   │AI解说  │ │
-│              │ 路径规划  │   │ 帧截图   │   │TTS配音 │ │
-│              │ 交互执行  │   │ 视觉增强 │   │SRT字幕 │ │
-│              └────┬─────┘   └────┬────┘   └───┬───┘ │
-│                   │              │            │      │
-│                   └──────┬───────┘            │      │
-│                          ▼                    │      │
-│                    ┌──────────┐               │      │
-│                    │  Video   │◄──────────────┘      │
-│                    │ FFmpeg   │                      │
-│                    │ 合成+字幕 │                      │
-│                    └────┬─────┘                      │
-│                         ▼                            │
-│                    ┌──────────┐                      │
-│                    │ Storage  │                      │
-│                    │ S3 上传   │                      │
-│                    └──────────┘                      │
-└──────────────────────────────────────────────────────┘
+├── server.js              # Express 主服务器，API 路由 + 视频生成调度
+├── lib/
+│   ├── agent.js           # 智能浏览 Agent（页面分析+路径规划+交互执行+视觉增强）
+│   ├── recorder.js        # Puppeteer 全程录屏（逐帧截图+关键帧+标题页+结尾页）
+│   ├── narrator.js        # AI 解说模块（分步 LLM 脚本+分段 TTS+SRT 字幕）
+│   ├── video.js           # FFmpeg 视频编译（帧→视频+音频合并+字幕烧录）
+│   ├── storage.js         # 对象存储（S3 封装）
+│   └── queue.js           # 内存任务队列（Job 生命周期管理）
+├── public/
+│   ├── index.html         # 前端主页面
+│   ├── css/style.css      # 样式（Vercel 极简黑+紫色光晕）
+│   └── js/app.js          # 前端交互逻辑
+├── assets/                # 项目素材
+├── package.json
+└── .coze                  # 部署配置
 ```
 
-### 核心模块
+<br/>
 
-| 文件 | 说明 |
+## 🔄 生成管线
+
+```
+URL 输入
+  │
+  ▼
+┌──────────────────────┐
+│  智能浏览 Agent       │  Puppeteer 打开页面 → 提取可交互元素
+│  (agent.js)          │  LLM 规划演示路径 → 自动点击/滚动/悬停
+│                      │  视觉增强注入（高亮光圈、平滑滚动、缩放）
+└──────────┬───────────┘
+           │ 6-10 步交互动作
+           ▼
+┌──────────────────────┐
+│  AI 解说生成          │  每步独立调用 LLM → 产品级解说脚本
+│  (narrator.js)       │  开头定位 + 功能详解 + 价值总结
+│                      │  分段 TTS 合成 + SRT 字幕生成
+└──────────┬───────────┘
+           │ 音频 + 字幕
+           ▼
+┌──────────────────────┐
+│  视频合成             │  逐帧截图 → H.264 编码
+│  (video.js)          │  音频分段合并 → 音画同步
+│                      │  ASS 字幕烧录 + 标题页/结尾页
+└──────────┬───────────┘
+           │ MP4
+           ▼
+┌──────────────────────┐
+│  云端存储             │  上传 S3 → 签名 URL 下载
+│  (storage.js)        │
+└──────────────────────┘
+```
+
+<br/>
+
+## 🛠️ 技术栈
+
+| 类别 | 技术 |
 |------|------|
-| `server.js` | Express 主服务器，API 路由 + 视频生成调度 |
-| `lib/agent.js` | 智能浏览 Agent（页面分析 + 路径规划 + 交互执行） |
-| `lib/recorder.js` | Puppeteer 全程录屏录制（帧截图 + 标题页/结尾页） |
-| `lib/narrator.js` | AI 解说模块（分步 LLM 脚本 + 分段 TTS + SRT/ASS 字幕） |
-| `lib/video.js` | FFmpeg 视频编译（帧→视频 + 音频合并 + 字幕烧录） |
-| `lib/storage.js` | 对象存储（S3Storage 封装） |
-| `lib/queue.js` | 内存任务队列（Job 生命周期管理） |
+| 后端 | Node.js + Express |
+| 页面录制 | Puppeteer-core |
+| 视频合成 | FFmpeg (H.264 + AAC + ASS) |
+| AI 能力 | coze-coding-dev-sdk (LLM + TTS + S3Storage) |
+| 前端 | 原生 HTML / CSS / JS |
 
-### 智能浏览视频生成管线
-
-1. **智能浏览** (`agent.js` + `recorder.js`)
-   - Agent 打开页面 → 提取可交互元素（导航、按钮、Tab、链接等）
-   - LLM 分析页面结构 → 规划完整演示路径
-   - 执行每个动作时停留 3-5 秒，注入视觉增强（高亮光圈、平滑滚动、缩放效果）
-   - 录屏模式：逐帧截图 + 关键帧截图双轨并行
-   - 开场标题页 + 结尾页自动生成
-
-2. **AI 解说** (`narrator.js`)
-   - 产品级解说结构：开头定位痛点 → 中间功能讲解 → 结尾价值总结
-   - 每步独立 LLM 生成，解说与画面完全同步
-   - 分段 TTS 合成 + 自动生成 SRT/ASS 字幕
-
-3. **视频合成** (`video.js`)
-   - FFmpeg 逐帧编码为 H.264 视频
-   - 分段音频合并，确保音画同步
-   - ASS 字幕烧录
-
-4. **云端存储** (`storage.js`)
-   - 上传 MP4 到 S3 对象存储 → 生成签名 URL
-
-### 技术栈
-
-- **后端**: Node.js + Express
-- **页面录制**: Puppeteer-core
-- **视频合成**: FFmpeg (H.264 + AAC + ASS)
-- **AI 能力**: coze-coding-dev-sdk (LLM + TTS + S3Storage)
-- **前端**: 原生 HTML/CSS/JS
+<br/>
 
 ## 🌐 API 接口
 
@@ -163,13 +166,15 @@ curl http://localhost:5000/api/status/<job-id>
 
 | 参数 | 字段 | 可选值 |
 |------|------|--------|
-| 风格 | `style` | `professional`(专业简洁) / `casual`(轻松亲切) / `energetic`(活力激情) |
-| 配音 | `voice` | `yunxi_male`(云希男声) / `xiaoxiao_female`(晓晓女声) |
-| 平台 | `platform` | `bilibili`(16:9) / `douyin`(9:16) / `xiaohongshu`(3:4) / `youtube`(16:9) / `wechat`(9:16) / `zhihu`(16:9) / `custom` |
+| 风格 | `style` | `professional` / `casual` / `energetic` |
+| 配音 | `voice` | `yunxi_male` / `xiaoxiao_female` |
+| 平台 | `platform` | `bilibili` / `douyin` / `xiaohongshu` / `youtube` / `wechat` / `zhihu` / `custom` |
+
+<br/>
 
 ## 📦 部署
 
-### Docker 部署
+### Docker
 
 ```dockerfile
 FROM node:18-slim
@@ -184,31 +189,51 @@ EXPOSE 5000
 CMD ["node", "server.js"]
 ```
 
-### 环境变量部署
+### 环境变量
 
-设置以下环境变量后直接运行 `node server.js`：
+| 变量 | 说明 |
+|------|------|
+| `COZE_API_KEY` | AI 服务密钥 |
+| `COZE_BUCKET_ENDPOINT_URL` | S3 存储 Endpoint |
+| `COZE_BUCKET_NAME` | S3 存储桶名 |
+| `PUPPETEER_EXECUTABLE_PATH` | Chromium 路径（默认自动检测） |
+| `DEPLOY_RUN_PORT` | 服务端口（默认 5000） |
 
-- `COZE_API_KEY` — AI 服务密钥
-- `COZE_BUCKET_ENDPOINT_URL` — S3 存储 Endpoint
-- `COZE_BUCKET_NAME` — S3 存储桶名
-- `PUPPETEER_EXECUTABLE_PATH` — Chromium 路径（默认自动检测）
+<br/>
 
 ## ❓ FAQ
 
-**Q: 支持哪些网站？**
-A: 支持所有可公开访问的网站。SPA 单页应用也能正常录制，Agent 会等待页面加载完成后再分析。
+<details>
+<summary><strong>支持哪些网站？</strong></summary>
+<br>
+支持所有可公开访问的网站。SPA 单页应用也能正常录制，Agent 会等待页面加载完成后再分析。
+</details>
 
-**Q: 生成的视频多长？**
-A: 标准时长 60-90 秒，根据页面复杂度自动调整。简单页面约 40-60 秒，复杂页面可达 2 分钟。
+<details>
+<summary><strong>生成的视频多长？</strong></summary>
+<br>
+标准时长 60-90 秒，根据页面复杂度自动调整。简单页面约 40-60 秒，复杂页面可达 2 分钟。
+</details>
 
-**Q: 为什么视频没有声音？**
-A: 请检查 `COZE_API_KEY` 是否正确配置。TTS 服务需要有效的 API Key。
+<details>
+<summary><strong>为什么视频没有声音？</strong></summary>
+<br>
+请检查 <code>COZE_API_KEY</code> 是否正确配置。TTS 服务需要有效的 API Key。
+</details>
 
-**Q: 支持自定义分辨率吗？**
-A: 支持。选择 `custom` 平台后默认输出 1920×1080，可在代码中修改 `OUTPUT_SIZE_MAP`。
+<details>
+<summary><strong>支持自定义分辨率吗？</strong></summary>
+<br>
+支持。选择 <code>custom</code> 平台后默认输出 1920x1080，可在 <code>lib/recorder.js</code> 中修改 <code>VIEWPORT_MAP</code>。
+</details>
 
-**Q: 可以批量生成吗？**
-A: 可以。通过 API 循环调用 `/api/generate`，系统内置任务队列管理。
+<details>
+<summary><strong>可以批量生成吗？</strong></summary>
+<br>
+可以。通过 API 循环调用 <code>/api/generate</code>，系统内置任务队列管理。
+</details>
+
+<br/>
 
 ## 📄 许可证
 
