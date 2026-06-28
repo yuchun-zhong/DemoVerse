@@ -4,8 +4,9 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { jobQueue } from './lib/queue.js';
-import { recordPage } from './lib/recorder.js';
-import { compileVideo, mergeAudioVideo } from './lib/video.js';
+import { recordPageWithAgent } from './lib/recorder.js';
+import { composeVideo } from './lib/video.js';
+import { PageAgent } from './lib/agent.js';
 import { Narrator } from './lib/narrator.js';
 import { VideoStorage } from './lib/storage.js';
 import { HeaderUtils } from 'coze-coding-dev-sdk';
@@ -33,7 +34,6 @@ app.post('/api/generate', async (req, res) => {
     return res.status(400).json({ error: '请提供项目链接 URL' });
   }
 
-  // 验证 URL 格式
   try {
     new URL(url);
   } catch {
@@ -117,7 +117,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ==================== 视频生成核心流程 ====================
+// ==================== 智能浏览视频生成管线 ====================
 
 async function processVideoGeneration(jobId, url, options, req) {
   const customHeaders = HeaderUtils.extractForwardHeaders(
@@ -135,59 +135,73 @@ async function processVideoGeneration(jobId, url, options, req) {
     });
   };
 
-  try {
-    // Step 1: 录制页面
-    updateProgress('recording', 10, '正在录制页面...');
-    const { screenshots, pageData, workDir } = await recordPage(url, jobId, options, (info) => {
-      const progressMap = {
-        launch: 10,
-        loading: 15,
-        analyzing: 20,
-        capturing: 25,
-        scrolling: 30,
-        interacting: 40,
-        captured: 45,
-      };
-      updateProgress(info.step, progressMap[info.step] || 30, info.message);
-    });
+  let workDir = null;
 
-    if (screenshots.length === 0) {
-      throw new Error('未能捕获任何页面截图');
+  try {
+    // ===== Phase 1: 智能浏览录制 =====
+    updateProgress('recording', 5, '启动智能浏览 Agent...');
+
+    const agent = new PageAgent(customHeaders, options);
+    
+    const { frameCapture, pageData, executedSteps, browsingSteps, workDir: wd } = await recordPageWithAgent(
+      url, jobId, options, agent, (info) => {
+        const progressMap = {
+          launch: 5,
+          loading: 10,
+          analyzing: 15,
+          planning: 22,
+          recording: 30,
+          captured: 40,
+        };
+        const msg = info.step === 'recording' 
+          ? `智能浏览录制中... (${info.message})` 
+          : info.message;
+        updateProgress(info.step, progressMap[info.step] || 25, msg);
+      }
+    );
+
+    workDir = wd;
+
+    if (frameCapture.getFrameCount() === 0) {
+      throw new Error('未能捕获任何浏览帧');
     }
 
-    // Step 2: AI 解说
-    updateProgress('narrating', 50, 'AI 生成解说...');
+    // ===== Phase 2: AI 步骤解说 =====
+    updateProgress('narrating', 45, 'AI 生成步骤解说...');
+
     const narrator = new Narrator(customHeaders, options);
-    const { script, audioPath } = await narrator.createNarration(
-      pageData, screenshots, jobId, (info) => {
+    const narrationResult = await narrator.createStepNarration(
+      browsingSteps, executedSteps, pageData, jobId, (info) => {
         const progressMap = {
-          generating_script: 55,
-          script_generated: 60,
-          generating_audio: 65,
-          audio_generated: 70,
-          audio_failed: 70,
+          generating_script: 48,
+          generating_audio: 55,
+          audio_generated: 62,
+          audio_failed: 62,
         };
-        updateProgress(info.step, progressMap[info.step] || 60, info.message);
+        updateProgress(info.step, progressMap[info.step] || 55, info.message);
       }
     );
 
-    jobQueue.update(jobId, { script });
+    jobQueue.update(jobId, { script: narrationResult.script });
 
-    // Step 3: 编译视频
-    updateProgress('compiling', 75, '编译视频...');
-    const videoPath = await compileVideo(
-      screenshots, jobId, { platform: options.platform }, audioPath, (info) => {
+    // ===== Phase 3: 视频合成 =====
+    updateProgress('compiling', 68, '合成视频...');
+
+    const videoPath = await composeVideo(
+      frameCapture, narrationResult, jobId, { platform: options.platform }, (info) => {
         const progressMap = {
-          compiling: 75,
-          encoding: 80,
-          encoded: 90,
+          compiling: 68,
+          encoding: 75,
+          encoded: 82,
+          merging: 85,
+          composed: 88,
         };
-        updateProgress(info.step, progressMap[info.step] || 80, info.message);
+        updateProgress(info.step, progressMap[info.step] || 75, info.message);
       }
     );
 
-    // Step 4: 上传到对象存储
-    updateProgress('uploading', 92, '上传视频...');
+    // ===== Phase 4: 上传到对象存储 =====
+    updateProgress('uploading', 90, '上传视频...');
     const storage = new VideoStorage();
     const { key, url: videoUrl } = await storage.uploadVideo(
       videoPath,
@@ -202,13 +216,17 @@ async function processVideoGeneration(jobId, url, options, req) {
       message: '视频生成完成',
       videoUrl,
       videoKey: key,
+      steps: browsingSteps.length,
+      duration: frameCapture.getTotalDuration().toFixed(1),
     });
 
     // 清理临时文件
-    try {
-      fs.rmSync(workDir, { recursive: true, force: true });
-    } catch (e) {
-      // 忽略清理错误
+    if (workDir) {
+      try {
+        fs.rmSync(workDir, { recursive: true, force: true });
+      } catch {
+        // 忽略清理错误
+      }
     }
 
   } catch (error) {
@@ -224,7 +242,7 @@ async function processVideoGeneration(jobId, url, options, req) {
 // ==================== 启动服务器 ====================
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`DemoVerse 服务已启动: http://0.0.0.0:${PORT}`);
-  console.log(`Chrome 路径: /root/.cache/ms-playwright/chromium-1161/chrome-linux/chrome`);
-  console.log(`FFmpeg 版本: 系统 ffmpeg`);
+  console.log(`DemoVerse 智能浏览版已启动: http://0.0.0.0:${PORT}`);
+  console.log(`Chrome: /root/.cache/ms-playwright/chromium-1161/chrome-linux/chrome`);
+  console.log(`FFmpeg: 系统 ffmpeg`);
 });

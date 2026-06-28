@@ -822,3 +822,49 @@ input {
     gap: 12px;
   }
 }
+
+/* ---------- Script Step Display ---------- */
+.script-step {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.script-step:last-child {
+  border-bottom: none;
+}
+
+.script-step-num {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.script-step-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.script-step-action {
+  font-size: 13px;
+  color: var(--accent-light);
+  font-weight: 500;
+  margin: 0 0 4px 0;
+  font-family: var(--font-mono);
+}
+
+.script-step-narration {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
