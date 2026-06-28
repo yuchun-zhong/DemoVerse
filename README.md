@@ -1,11 +1,7 @@
-<p align="center">
-  <img src="assets/preview.png" alt="DemoVerse Preview" width="100%">
-</p>
-
 <h1 align="center">DemoVerse</h1>
 
 <p align="center">
-  <strong>AI Demo 视频生成器 — 输入链接，自动生成产品演示视频</strong>
+  <strong>AI Demo 视频生成器 — 输入项目链接，自动生成带解说的产品演示视频</strong>
 </p>
 
 <p align="center">
@@ -19,6 +15,14 @@
 <p align="center">
   智能浏览 Agent · AI 同步解说 · TTS 配音 · 字幕视频一键输出
 </p>
+
+<br/>
+
+<p align="center">
+  <img src="assets/preview.png" alt="DemoVerse Web UI — 粘贴项目链接即可生成 AI 解说 Demo 视频" width="100%">
+</p>
+
+<p align="center"><em>Web UI：粘贴项目链接 → 选择风格/配音/平台 → 一键生成 AI 解说 Demo 视频</em></p>
 
 <br/>
 
